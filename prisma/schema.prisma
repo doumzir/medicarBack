@@ -24,7 +24,8 @@ model User {
   role          Role
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
+  isResetPassword Boolean  @default(false)
+  resetPasswordToken String? @unique
   healthEntries       HealthEntry[]
   notes               Note[]
   documents           Document[]

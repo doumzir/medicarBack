@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 
+import { createId } from '@paralleldrive/cuid2';
 import { MailerService } from 'src/mailer.service';
-import type { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma.service';
 import type { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Payload } from './jwt.strategy';
 
 @Injectable()
@@ -121,22 +123,25 @@ export class AuthService {
     };
   }
 
-  /* async resetUserPasswordRequest({ email }: { email: string }) {
+  async resetUserPasswordRequest({ email }: { email: string }) {
     try {
       const existingUser = await this.prisma.user.findUnique({
         where: {
           email,
         },
+        select: {
+          isResetPassword: true,
+          firstName: true,
+          email: true,
+        },
       });
 
       if (!existingUser) {
-        throw new Error("L'utilisateur n'existe pas.");
+        throw new Error('The user does not exist.');
       }
 
-      if (existingUser.isResettingPassword === true) {
-        throw new Error(
-          'Une demande de réinitialisation de mot de passe est déjà en cours.',
-        );
+      if (existingUser.isResetPassword === true) {
+        throw new Error('A password reset request is already in progress.');
       }
 
       const createdId = createId();
@@ -145,7 +150,7 @@ export class AuthService {
           email,
         },
         data: {
-          isResettingPassword: true,
+          isResetPassword: true,
           resetPasswordToken: createdId,
         },
       });
@@ -157,14 +162,19 @@ export class AuthService {
 
       return {
         error: false,
-        message:
-          'Veuillez consulter vos emails pour réinitialiser votre mot de passe.',
+        message: 'Please check your emails to reset your password.',
       };
       // return this.authenticateUser({
       //   userId: existingUser.id,
       // });
-    } catch (error) {
-      return { error: true, message: error.message };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { error: true, message: error.message };
+      }
+      return {
+        error: true,
+        message: 'An unexpected error occurred during password reset request',
+      };
     }
   }
 
@@ -177,31 +187,32 @@ export class AuthService {
       });
 
       if (!existingUser) {
-        throw new Error("L'utilisateur n'existe pas.");
+        throw new Error('The user does not exist.');
       }
 
-      if (existingUser.isResettingPassword === false) {
-        throw new Error(
-          "Aucune demande de réinitialisation de mot de passe n'est en cours.",
-        );
+      if (existingUser.isResetPassword === false) {
+        throw new Error('A password reset request is not in progress.');
       }
 
       return {
         error: false,
-        message: 'Le token est valide et peut être utilisé.',
+        message: 'The token is valid and can be used.',
       };
-      // return this.authenticateUser({
-      //   userId: existingUser.id,
-      // });
-    } catch (error) {
-      return { error: true, message: error.message };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { error: true, message: error.message };
+      }
+      return {
+        error: true,
+        message: 'An unexpected error occurred during password reset request',
+      };
     }
   }
 
   async resetUserPassword({
     resetPasswordDto,
   }: {
-    resetPasswordDto: ResetUserPasswordDto;
+    resetPasswordDto: ResetPasswordDto;
   }) {
     try {
       const { password, token } = resetPasswordDto;
@@ -212,13 +223,11 @@ export class AuthService {
       });
 
       if (!existingUser) {
-        throw new Error("L'utilisateur n'existe pas.");
+        throw new Error('The user does not exist.');
       }
 
-      if (existingUser.isResettingPassword === false) {
-        throw new Error(
-          "Aucune demande de réinitialisation de mot de passe n'est en cours.",
-        );
+      if (existingUser.isResetPassword === false) {
+        throw new Error('A password reset request is not in progress.');
       }
 
       const hashedPassword = await this.hashPassword({
@@ -229,7 +238,7 @@ export class AuthService {
           resetPasswordToken: token,
         },
         data: {
-          isResettingPassword: false,
+          isResetPassword: false,
           password: hashedPassword,
         },
       });
@@ -241,8 +250,14 @@ export class AuthService {
       // return this.authenticateUser({
       //   userId: existingUser.id,
       // });
-    } catch (error) {
-      return { error: true, message: error.message };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { error: true, message: error.message };
+      }
+      return {
+        error: true,
+        message: 'An unexpected error occurred during password reset',
+      };
     }
-  } */
+  }
 }

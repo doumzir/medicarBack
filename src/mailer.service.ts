@@ -54,4 +54,25 @@ export class MailerService {
         '! Welcome to our app, we are <strong>glad</strong> to have you here.',
     });
   }
+  async sendRequestedPasswordEmail({
+    recipient,
+    firstName,
+    token,
+  }: {
+    recipient: string;
+    firstName: string;
+    token: string;
+  }) {
+    const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    return this.sendEmail({
+      recipient: [recipient],
+      subject: 'Reset your password',
+      html:
+        'Hi ' +
+        firstName +
+        'You have requested a password reset. Please click on the link below to reset your password: ' +
+        link +
+        'If you did not request a password reset, someone else might have tried to access your account. Please contact us if you think this is the case.',
+    });
+  }
 }

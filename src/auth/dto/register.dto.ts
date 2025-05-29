@@ -1,22 +1,30 @@
-import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export enum Role {
   PATIENT = 'PATIENT',
   PROFESSIONAL = 'PROFESSIONAL',
 }
-
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 export class RegisterDto {
   @IsString({ message: 'You need to provide a first name' })
-  firstName: string;
+  firstName!: string;
 
   @IsString({ message: 'You need to provide a last name' })
-  lastName: string;
+  lastName!: string;
 
   @IsEmail({}, { message: 'Invalid email format' })
-  email: string;
+  email!: string;
 
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
-  password: string;
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  password!: string;
 
   /*   @IsObject()
   @IsOptional()
@@ -27,5 +35,5 @@ export class RegisterDto {
   }; */
 
   @IsEnum(Role)
-  role: Role;
+  role!: Role;
 }
