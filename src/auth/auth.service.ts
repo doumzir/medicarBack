@@ -37,6 +37,7 @@ export class AuthService {
       }
       return this.authenticateUser({
         userId: existingUser.id,
+        role: existingUser.role,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -89,6 +90,7 @@ export class AuthService {
 
       return this.authenticateUser({
         userId: createdUser.id,
+        role: createdUser.role,
       });
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -116,8 +118,8 @@ export class AuthService {
     return isPasswordValid;
   }
 
-  private authenticateUser({ userId }: Payload) {
-    const payload: Payload = { userId };
+  private authenticateUser({ userId, role }: Payload) {
+    const payload: Payload = { userId, role };
     return {
       access_token: this.jwtService.sign(payload),
     };

@@ -123,7 +123,10 @@ describe('AuthService', () => {
         loginDto.password,
         mockUser.password,
       );
-      expect(jwtService.sign).toHaveBeenCalledWith({ userId: mockUser.id });
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        userId: mockUser.id,
+        role: mockUser.role,
+      });
     });
 
     it('should fail when user does not exist', async () => {
