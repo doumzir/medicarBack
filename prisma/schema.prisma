@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  // the output is a recommandation from prisma documentation , especially for the next ORM7, instead of the nestJS documentation we follow prisma documentation
   output   = "../generated/prisma"
 }
 
@@ -15,9 +16,97 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          Role
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isResetPassword Boolean  @default(false)
+  resetPasswordToken String? @unique
+  healthEntries       HealthEntry[]
+  notes               Note[]
+  documents           Document[]
+  reminders           Reminder[]
+  treatments          Treatment[] @relation("PatientTreatment")
+  treatmentsCreated   Treatment[] @relation("ProfessionalTreatment")
+  followedPatients    Follow[]    @relation("FollowedByProfessional")
+  followers           Follow[]    @relation("FollowedPatient")
+  sharedAccessTokens  SharedAccessToken[]
 }
+
+model HealthEntry {
+  id         String   @id @default(uuid())
+  painLevel  Int
+  mood       String
+  fatigue    Int
+  comment    String?
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Reminder {
+  id         String   @id @default(uuid())
+  type       String   // traitement, exercice, consultation
+  dateTime   DateTime
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Treatment {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  createdAt    DateTime @default(now())
+  patientId    String
+  patient      User     @relation("PatientTreatment", fields: [patientId], references: [id])
+  createdById  String
+  createdBy    User     @relation("ProfessionalTreatment", fields: [createdById], references: [id])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  name       String
+  url        String
+  uploadedAt DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Follow {
+  id           String   @id @default(uuid())
+  professional User     @relation("FollowedByProfessional", fields: [professionalId], references: [id])
+  professionalId String
+  patient      User     @relation("FollowedPatient", fields: [patientId], references: [id])
+  patientId    String
+  createdAt    DateTime @default(now())
+
+  @@unique([professionalId, patientId])
+}
+
+model SharedAccessToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  PATIENT
+  PROFESSIONAL
+  ADMIN
+}
+
