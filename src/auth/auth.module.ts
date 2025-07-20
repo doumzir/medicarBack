@@ -1,31 +1,28 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { AwsS3Service } from 'src/aws/aws-s3.service';
-import { MailerService } from 'src/mailer.service';
-import { PrismaService } from 'src/prisma.service';
-import { StripeService } from 'src/stripe/stripe.service';
-import { UserService } from 'src/user/user.service';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MailerService } from 'src/mailer.service';
 import { JwtStrategy } from './jwt.strategy';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UsersService } from 'src/users/users.service';
 
 @Module({
   imports: [
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
       global: true,
+      secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '30d' },
     }),
   ],
   controllers: [AuthController],
   providers: [
     PrismaService,
+    JwtService,
     JwtStrategy,
     AuthService,
-    UserService,
+    UsersService,
     MailerService,
-    AwsS3Service,
-    StripeService,
   ],
 })
 export class AuthModule {}

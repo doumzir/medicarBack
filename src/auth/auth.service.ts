@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { createId } from '@paralleldrive/cuid2';
 import { compare, hash } from 'bcrypt';
+
 import { MailerService } from 'src/mailer.service';
-import { PrismaService } from 'src/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LogUserDto } from './dto/log-user.dto';
-import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
-import { UserPayload } from './jwt.strategy';
+import type { PrismaService } from 'src/prisma/prisma.service';
+import type { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { Payload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +15,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailerService: MailerService,
   ) {}
-  async login({ authBody }: { authBody: LogUserDto }) {
+  async login({ authBody }: { authBody: LoginDto }) {
     try {
       const { email, password } = authBody;
 
@@ -26,29 +25,31 @@ export class AuthService {
         },
       });
 
-      if (!existingUser) {
-        throw new Error("L'utilisateur n'existe pas.");
-      }
-
       const isPasswordValid = await this.isPasswordValid({
         password,
-        hashedPassword: existingUser.password,
+        hashedPassword: existingUser?.password ?? '',
       });
 
-      if (!isPasswordValid) {
-        throw new Error('Le mot de passe est invalide.');
+      if (!isPasswordValid || !existingUser) {
+        throw new Error('Email or password incorrect');
       }
       return this.authenticateUser({
         userId: existingUser.id,
       });
-    } catch (error) {
-      return { error: true, message: error.message };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { error: true, message: error.message };
+      }
+      return {
+        error: true,
+        message: "Une erreur inattendue s'est produite pendant la connexion",
+      };
     }
   }
 
-  async register({ registerBody }: { registerBody: CreateUserDto }) {
+  async register({ registerBody }: { registerBody: RegisterDto }) {
     try {
-      const { email, firstName, password } = registerBody;
+      const { email, firstName, lastName, password, role } = registerBody;
 
       const existingUser = await this.prisma.user.findUnique({
         where: {
@@ -57,9 +58,16 @@ export class AuthService {
       });
 
       if (existingUser) {
-        throw new Error('Un compte existe déjà à cette adresse email.');
+        throw new Error('Account already exists with this email');
       }
-
+      // we need to check if the password is strong enough
+      const passwordRegex =
+        /((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/;
+      if (!passwordRegex.test(password)) {
+        throw new Error(
+          'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character',
+        );
+      }
       const hashedPassword = await this.hashPassword({ password });
 
       const createdUser = await this.prisma.user.create({
@@ -67,21 +75,26 @@ export class AuthService {
           email,
           password: hashedPassword,
           firstName,
+          lastName,
+          role,
         },
       });
 
-      await this.mailerService.sendCreatedAccountEmail({
-        firstName,
-        recipient: email,
+      await this.mailerService.sendWelcomeEmail({
+        recipient: createdUser.email,
+        firstName: createdUser.firstName,
       });
 
       return this.authenticateUser({
         userId: createdUser.id,
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return { error: true, message: error.message };
+      }
       return {
         error: true,
-        message: error.message,
+        message: 'an unexpected error occurred during registration',
       };
     }
   }
@@ -101,14 +114,14 @@ export class AuthService {
     return isPasswordValid;
   }
 
-  private authenticateUser({ userId }: UserPayload) {
-    const payload: UserPayload = { userId };
+  private authenticateUser({ userId }: Payload) {
+    const payload: Payload = { userId };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
-  async resetUserPasswordRequest({ email }: { email: string }) {
+  /* async resetUserPasswordRequest({ email }: { email: string }) {
     try {
       const existingUser = await this.prisma.user.findUnique({
         where: {
@@ -231,5 +244,5 @@ export class AuthService {
     } catch (error) {
       return { error: true, message: error.message };
     }
-  }
+  } */
 }

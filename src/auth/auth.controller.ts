@@ -3,40 +3,46 @@ import {
   Controller,
   Get,
   Post,
-  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { UserService } from 'src/user/user.service';
+
+import { UsersService } from 'src/users/users.service';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LogUserDto } from './dto/log-user.dto';
-import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { RequestWithUser } from './jwt.strategy';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from './guard/jwt-auth.guard';
+import { RequestUser } from './jwt.strategy';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly userService: UserService,
+    private readonly userService: UsersService,
   ) {}
-
-  @Post('signin')
-  async login(@Body() authBody: LogUserDto) {
-    console.log(authBody);
+  // With a email and passwor the user is authenticated and the token is returned (ex:abc123)
+  @Post('login')
+  async login(@Body() authBody: LoginDto) {
     return await this.authService.login({
       authBody,
     });
   }
-  @Post('signup')
-  async register(@Body() registerBody: CreateUserDto) {
-    console.log({ registerBody });
+  // With a token (ex:abc123) the user is authenticated and the user is returned
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async AuthenticatedUser(@Request() request: RequestUser) {
+    // abc123 => {userId: "123"}
+    return await this.userService.getUser({
+      userId: request.user.userId,
+    });
+  }
+  @Post('register')
+  async register(@Body() registerBody: RegisterDto) {
     return await this.authService.register({
       registerBody,
     });
   }
-
+  /*
   @Post('request-reset-password')
   async resetUserPasswordRequest(@Body('email') email: string) {
     return await this.authService.resetUserPasswordRequest({
@@ -57,11 +63,6 @@ export class AuthController {
     });
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get()
-  async getAuthenticatedUser(@Request() request: RequestWithUser) {
-    return await this.userService.getUser({
-      userId: request.user.userId,
-    });
-  }
+
+   */
 }

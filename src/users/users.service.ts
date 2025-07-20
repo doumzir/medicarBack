@@ -1,17 +1,18 @@
 import {
-    ForbiddenException,
-    Injectable,
-    NotFoundException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { SignupDto } from './dto/signup.dto';
+import type { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
-
-  async getUser(userId: string) {
+  async getUsers() {
+    const users = await this.prisma.user.findMany();
+    return users;
+  }
+  async getUser({ userId }: { userId: string }) {
     try {
       const user = await this.prisma.user.findUniqueOrThrow({
         where: { id: userId },
@@ -28,49 +29,39 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
   }
-
-  private async hashPassword(password: string): Promise<string> {
-    return bcrypt.hash(password, 10);
-  }
-
-  private signToken(
-    userId: string,
-    email: string,
-    role: string,
-  ): { userId: string; email: string; role: string } {
-    return { userId, email, role };
-  }
-
-  async signup(dto: SignupDto) {
-    const hash = await this.hashPassword(dto.password);
-
-    // Vérifie que l'email n'existe pas
-    const emailExists = await this.prisma.user.findUnique({
-      where: { email: dto.email },
-      select: {
-        id: true,
-        email: true,
-        role: true,
+  async getPatients() {
+    const patients = await this.prisma.user.findMany({
+      where: {
+        role: 'PATIENT',
       },
     });
-    if (emailExists) throw new ForbiddenException('Email déjà utilisé');
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hash,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        role: dto.role,
+    return patients;
+  }
+  async getProfessionals() {
+    const professionals = await this.prisma.user.findMany({
+      where: {
+        role: 'PROFESSIONAL',
       },
     });
-
-    return this.signToken(user.id, user.email, user.role);
+    return professionals;
   }
-  async signin(dto: SigninDto) {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { email: dto.email },
-    });
-    return this.signToken(user.id, user.email, user.role);
+  async getPatientsByProfessionalId(professionalId: string) {
+    try {
+      const patients = await this.prisma.user.findUniqueOrThrow({
+        where: {
+          id: professionalId,
+        },
+        select: {
+          role: true,
+          followedPatients: true,
+        },
+      });
+      if (patients.role !== 'PROFESSIONAL') {
+        throw new ForbiddenException('User is not a professional');
+      }
+      return patients;
+    } catch {
+      throw new NotFoundException('Professional not found');
+    }
   }
 }
