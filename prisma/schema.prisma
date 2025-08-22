@@ -1,27 +1,23 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   // the output is a recommandation from prisma documentation , especially for the next ORM7, instead of the nestJS documentation we follow prisma documentation
   output   = "../generated/prisma"
 }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
   password      String
   firstName     String
   lastName      String
-  role          Role
+  role          Role @default(PATIENT)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   isResetPassword Boolean  @default(false)
@@ -29,29 +25,20 @@ model User {
   healthEntries       HealthEntry[]
   notes               Note[]
   documents           Document[]
-  reminders           Reminder[]
-  treatments          Treatment[] @relation("PatientTreatment")
-  treatmentsCreated   Treatment[] @relation("ProfessionalTreatment")
-  followedPatients    Follow[]    @relation("FollowedByProfessional")
-  followers           Follow[]    @relation("FollowedPatient")
-  sharedAccessTokens  SharedAccessToken[]
-}
 
+  treatments          Treatment[] 
+
+
+  appointments        Appointment[]
+}
 model HealthEntry {
   id         String   @id @default(uuid())
-  painLevel  Int
-  mood       String
-  fatigue    Int
-  comment    String?
-  createdAt  DateTime @default(now())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-}
-
-model Reminder {
-  id         String   @id @default(uuid())
-  type       String   // traitement, exercice, consultation
-  dateTime   DateTime
+  global  Int
+  physical  Int
+  mental Int
+  feeling       String?
+  description   String?
+  limbs    String?
   createdAt  DateTime @default(now())
   userId     String
   user       User     @relation(fields: [userId], references: [id])
@@ -59,23 +46,52 @@ model Reminder {
 
 model Treatment {
   id           String   @id @default(uuid())
+  date DateTime?
+description  String?
   title        String
-  description  String?
+  type String?
+  frequency Int?
+  DuringMeal Boolean?
+  DuringMorning Boolean?
+  DuringMidday Boolean?
+  DuringEvening Boolean?
+
+ 
+  
   createdAt    DateTime @default(now())
   patientId    String
-  patient      User     @relation("PatientTreatment", fields: [patientId], references: [id])
+  patient      User     @relation(fields: [patientId], references: [id])
   createdById  String
-  createdBy    User     @relation("ProfessionalTreatment", fields: [createdById], references: [id])
-}
 
-model Note {
+}
+model Appointment {
   id        String   @id @default(uuid())
-  content   String
+  dateTime  DateTime
   createdAt DateTime @default(now())
+  contact   Contact?  @relation(fields: [contactId], references: [id])
+  contactId String?
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
+model Contact {
+  id        String   @id @default(uuid())
+  contactName  String
+  firstName String?
+  lastName  String?
+  profession String?
+  phone     String?
+  email     String?
 
+  createdAt DateTime @default(now())
+  appointments Appointment[]
+}
+model Note {
+  id        String   @id @default(uuid())
+  title     String
+  note   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
 model Document {
   id         String   @id @default(uuid())
   name       String
@@ -85,28 +101,8 @@ model Document {
   user       User     @relation(fields: [userId], references: [id])
 }
 
-model Follow {
-  id           String   @id @default(uuid())
-  professional User     @relation("FollowedByProfessional", fields: [professionalId], references: [id])
-  professionalId String
-  patient      User     @relation("FollowedPatient", fields: [patientId], references: [id])
-  patientId    String
-  createdAt    DateTime @default(now())
-
-  @@unique([professionalId, patientId])
-}
-
-model SharedAccessToken {
-  id        String   @id @default(uuid())
-  token     String   @unique
-  expiresAt DateTime
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-}
 
 enum Role {
   PATIENT
-  PROFESSIONAL
   ADMIN
 }
-

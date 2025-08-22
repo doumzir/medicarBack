@@ -14,7 +14,10 @@ export class MailerService {
     recipient: string[];
     subject: string;
     html: string;
-  }) {
+    }) {
+    if (process.env.NODE_ENV !== 'production') {
+      recipient = [process.env.TEST_EMAIL || 'test@test.com'];
+     }
     try {
       const { data, error } = await this.mailer.emails.send({
         from: 'Acme <onboarding@resend.dev>',

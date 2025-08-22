@@ -1,23 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
-import  { UsersService } from './users.service';
-
+import { Controller } from '@nestjs/common';
+import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   // private: ensures encapsulation and prevents external misuse of dependencies
   // readonly: prevents accidental reassignment and makes code more predictable
-  constructor(private readonly usersService: UsersService) {}
-  @Get()
-  getUsers() {
-    return this.usersService.getUsers();
-  }
-  @Get('patients')
-  getPatients() {
-    return this.usersService.getPatients();
-  }
-  @Get('professionals')
-  getProfessionals() {
-    return this.usersService.getProfessionals();
-  }
+  constructor(private readonly usersService: UsersService) { }
+  
+
+
   /*   @Get("patients/:professionalId")
   // @UseGuards(JwtAuthGuard) // TODO: Créer JwtAuthGuard
   getPatientsByProfessionalId(@Param("professionalId") professionalId: string) {

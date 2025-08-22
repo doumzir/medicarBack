@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -37,31 +36,5 @@ export class UsersService {
     });
     return patients;
   }
-  async getProfessionals() {
-    const professionals = await this.prisma.user.findMany({
-      where: {
-        role: 'PROFESSIONAL',
-      },
-    });
-    return professionals;
-  }
-  async getPatientsByProfessionalId(professionalId: string) {
-    try {
-      const patients = await this.prisma.user.findUniqueOrThrow({
-        where: {
-          id: professionalId,
-        },
-        select: {
-          role: true,
-          followedPatients: true,
-        },
-      });
-      if (patients.role !== 'PROFESSIONAL') {
-        throw new ForbiddenException('User is not a professional');
-      }
-      return patients;
-    } catch {
-      throw new NotFoundException('Professional not found');
-    }
-  }
+
 }

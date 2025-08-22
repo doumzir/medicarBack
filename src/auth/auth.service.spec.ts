@@ -182,7 +182,7 @@ describe('AuthService', () => {
       password: 'Password123!',
       firstName: 'Pierre',
       lastName: 'Martin',
-      role: Role.PATIENT,
+      
     };
 
     it('should successfully register a new user', async () => {
@@ -209,7 +209,7 @@ describe('AuthService', () => {
           password: 'hashedPassword123',
           firstName: registerDto.firstName,
           lastName: registerDto.lastName,
-          role: registerDto.role,
+  
         },
       });
       expect(mailerService.sendWelcomeEmail).toHaveBeenCalledWith({
