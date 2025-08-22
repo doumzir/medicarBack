@@ -44,7 +44,6 @@ export class AuthController {
       registerBody,
     });
   }
-
   @Post('request-reset-password')
   async resetUserPasswordRequest(@Body('email') email: string) {
     return await this.authService.resetUserPasswordRequest({
@@ -58,7 +57,6 @@ export class AuthController {
       resetPasswordDto,
     });
   }
-
   @Get('verify-reset-password-token')
   async verifyResetPasswordToken(@Query('token') token: string) {
     return await this.authService.verifyResetPasswordToken({

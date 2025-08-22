@@ -52,7 +52,7 @@ export class AuthService {
 
   async register({ registerBody }: { registerBody: RegisterDto }) {
     try {
-      const { email, firstName, lastName, password, role } = registerBody;
+      const { email, firstName, lastName, password, healthEntry } = registerBody;
 
       const existingUser = await this.prisma.user.findUnique({
         where: {
@@ -79,10 +79,20 @@ export class AuthService {
           password: hashedPassword,
           firstName,
           lastName,
-          role,
+       
         },
       });
-
+      if (healthEntry) {
+        await this.prisma.healthEntry.create({
+          data: {
+            global: healthEntry,
+            userId: createdUser.id,
+            physical: healthEntry,
+            mental: healthEntry,
+          },
+        });
+      }
+   
       await this.mailerService.sendWelcomeEmail({
         recipient: createdUser.email,
         firstName: createdUser.firstName,

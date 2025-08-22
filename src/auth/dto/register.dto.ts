@@ -1,8 +1,11 @@
 import {
   IsEmail,
-  IsEnum,
+  IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  Max,
+
   MinLength,
 } from 'class-validator';
 
@@ -10,7 +13,7 @@ export enum Role {
   PATIENT = 'PATIENT',
   PROFESSIONAL = 'PROFESSIONAL',
 }
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+ 
 export class RegisterDto {
   @IsString({ message: 'You need to provide a first name' })
   firstName!: string;
@@ -25,6 +28,11 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
   password!: string;
+  
+  @IsOptional()
+  @IsInt()
+  @Max(10)
+  healthEntry?: number;
 
   /*   @IsObject()
   @IsOptional()
@@ -33,7 +41,4 @@ export class RegisterDto {
     description?: string;
     type: string;
   }; */
-
-  @IsEnum(Role)
-  role!: Role;
 }
