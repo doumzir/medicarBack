@@ -39,9 +39,11 @@ model HealthEntry {
   feeling       String?
   description   String?
   limbs    String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime @default(now()) 
   userId     String
   user       User     @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, createdAt], name: "unique_user_daily_entry")
 }
 
 model Treatment {
