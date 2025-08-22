@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { HealthEntry } from 'generated/prisma';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { RequestUser } from 'src/auth/jwt.strategy';
@@ -20,6 +20,7 @@ export class PatientsController {
     @Body() createHealthEntryData: Omit<HealthEntry, 'id' | 'createdAt' | 'userId'>,
     @Request() request: RequestUser
   ) {
+    
     return await this.patientsService.createNewHealthEntry({
       ...createHealthEntryData,
       userId: request.user.userId,
@@ -35,9 +36,7 @@ export class PatientsController {
     return await this.patientsService.getHealthEntries(request.user.userId, startDate, endDate);
   }
 
-  @Delete('delete-account')
-  async remove(@Request() request: RequestUser) {
-    return await this.patientsService.removeUser(request.user.userId);
-  }
+
+
   
 }
